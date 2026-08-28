@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>CyberShield</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+
+<body>
+
+<header class="header">
+
+    <div>
+        <h1>🛡️ CyberShield</h1>
+
+        <p>
+            Security Event Monitoring Dashboard
+        </p>
+    </div>
+
+    <div class="status" id="systemStatus">
+        🟢 LIVE
+    </div>
+    <div class="last-updated" id="lastUpdated">
+        last-updated:just now
+    </div>
+
+</header>
+
+
+<main>
+
+    <!-- ============================= -->
+    <!-- Statistics -->
+    <!-- ============================= -->
+
+   <section class="stats">
+
+    <!-- Total Events -->
+    <div class="card">
+        <h2>{{ events | length }}</h2>
+        <p>Total Events</p>
+    </div>
+
+
+    <!-- Security Alerts -->
+    <div class="card">
+        <h2>{{ alerts | length }}</h2>
+        <p>Security Alerts</p>
+    </div>
+
+
+    <!-- Critical Alerts -->
+    <div class="card">
+        <h2>
+            {{
+                alerts
+                | selectattr("severity", "equalto", "CRITICAL")
+                | list
+                | length
+            }}
+        </h2>
+
+        <p>Critical Alerts</p>
+    </div>
+
+
+    <!-- Unique IPs -->
+    <div class="card">
+        <h2>
+            {{
+                events
+                | map(attribute="source_ip")
+                | unique
+                | list
+                | length
+            }}
+        </h2>
+
+        <p>Unique IPs</p>
+    </div>
+
+
+    <!-- Highest Threat Score -->
+    <div class="card">
+        <h2>
+            {% if alerts %}
+                {{ alerts[0]["score"] }}
+            {% else %}
+                0
+            {% endif %}
+        </h2>
+
+        <p>Highest Threat Score</p>
+    </div>
+
+</section>
+
+
+    <!-- ============================= -->
+    <!-- Security Alerts -->
+    <!-- ============================= -->
+
+    <section class="panel">
+
+        <div class="panel-header">
+
+            <h2>🚨 Security Alerts</h2>
+
+            <span>
+                {{ alerts | length }} detected
+            </span>
+
+        </div>
+
+<div class="alert-controls">
+
+    <input
+        type="text"
+        id="alertSearch"
+        placeholder="🔎 Search IP or alert..."
+    >
+
+    <select id="severityFilter">
+
+        <option value="ALL">All Severities</option>
+        <option value="CRITICAL">Critical</option>
+        <option value="HIGH">High</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="LOW">Low</option>
+
+    </select>
+
+</div>
+
+        {% if alerts %}
+
+            {% for alert in alerts %}
+
+
+<div
+    class="alert-card"
+    data-ip="{{ alert['source_ip'] }}"
+    data-severity="{{ alert['severity'] }}"
+    data-type="{{ alert['type'] }}"
+    data-message="{{ alert['message'] }}"
+    data-count="{{ alert['count'] }}"
+    data-score="{{ alert['score'] }}"
+>
+ 
+                <div class="alert-info">
+
+                    <h3>
+                        {{ alert["type"] }}
+                    </h3>
+
+                    <p>
+                        {{ alert["message"] }}
+                    </p>
+
+                    <small>
+                        Source IP:
+                        {{ alert["source_ip"] }}
+                        |
+                        Occurrences:
+                        {{ alert["count"] }}
+                    </small>
+
+                </div>
+                 <div class="alert-right">
+
+                      <div class="threat-score">
+                        {{ alert["score"] }}/100
+                      </div>
+
+                       <div class="severity
+                        {{ alert['severity'] | lower }}">
+
+                        {{ alert["severity"] }}
+
+                        </div>
+
+                </div>
+            
+                  
+          
+            </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="no-alerts">
+                🟢 No suspicious activity detected.
+            </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- Recent Events -->
+    <!-- ============================= -->
+
+    <section class="panel">
+
+        <div class="panel-header">
+
+            <h2>Recent Security Events</h2>
+
+            <span>
+                {{ events | length }} events
+            </span>
+
+        </div>
+
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Time</th>
+                        <th>Source IP</th>
+                        <th>Event</th>
+                        <th>Severity</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for event in events %}
+
+                    <tr>
+
+                        <td>
+                            {{ event["event_time"] }}
+                        </td>
+
+                        <td>
+                            {{ event["source_ip"] }}
+                        </td>
+
+                        <td>
+                            {{ event["event_type"] }}
+                        </td>
+
+                        <td>
+
+                            <span class="event-severity
+                                {{ event['severity'] | lower }}">
+
+                                {{ event["severity"] }}
+
+                            </span>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
+<!-- ========================================= -->
+<!-- Incident Investigation Modal -->
+<!-- ========================================= -->
+
+<div id="incidentModal" class="incident-modal">
+
+    <div class="incident-panel">
+
+        <div class="incident-header">
+
+            <h2>🚨 Incident Investigation</h2>
+
+            <button onclick="closeIncident()">✕</button>
+
+        </div>
+
+
+        <div class="incident-content">
+
+            <div class="incident-title">
+
+                <h3 id="incidentType">
+                    Security Alert
+                </h3>
+
+                <span id="incidentSeverity">
+                    CRITICAL
+                </span>
+
+            </div>
+
+
+            <div class="incident-grid">
+
+                <div class="incident-item">
+
+                    <small>Source IP</small>
+
+                    <strong id="incidentIP">
+                        -
+                    </strong>
+
+                </div>
+
+
+                <div class="incident-item">
+
+                    <small>Occurrences</small>
+
+                    <strong id="incidentCount">
+                        -
+                    </strong>
+
+                </div>
+
+
+                <div class="incident-item">
+
+                    <small>Threat Score</small>
+
+                    <strong id="incidentScore">
+                        -
+                    </strong>
+
+                </div>
+
+
+                <div class="incident-item">
+
+                    <small>Severity</small>
+
+                    <strong id="incidentSeverityText">
+                        -
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="incident-description">
+
+                <h3>🔍 Detection Reason</h3>
+
+                <p id="incidentMessage">
+                    -
+                </p>
+
+            </div>
+
+
+            <div class="incident-status">
+
+                <span>●</span>
+
+                CyberShield detected suspicious activity
+                from this source.
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<script>
+
+    function setupAlertFilters() {
+        document.addEventListener("click", function(event) {
+
+            const card =
+            event.target.closest(".alert-card");
+
+        if (!card) {
+            return;
+          }
+
+          showIncident(card);
+
+        });
+
+        const searchInput =
+            document.getElementById("alertSearch");
+
+        const severityFilter =
+            document.getElementById("severityFilter");
+
+        if (!searchInput || !severityFilter) {
+            return;
+        }
+
+        function filterAlerts() {
+
+            const search =
+                searchInput.value.toLowerCase();
+
+            const severity =
+                severityFilter.value;
+
+            const alertCards =
+                document.querySelectorAll(".alert-card");
+
+            alertCards.forEach(card => {
+
+                const ip =
+                    (card.dataset.ip || "").toLowerCase();
+
+                const type =
+                    (card.dataset.type || "").toLowerCase();
+
+                const message =
+                    (card.dataset.message || "").toLowerCase();
+
+                const cardSeverity =
+                    card.dataset.severity || "";
+
+                const matchesSearch =
+                    ip.includes(search) ||
+                    type.includes(search) ||
+                    message.includes(search);
+
+                const matchesSeverity =
+                    severity === "ALL" ||
+                    cardSeverity === severity;
+
+                if (
+                    matchesSearch &&
+                    matchesSeverity
+                ) {
+
+                    card.style.display = "";
+
+                } else {
+
+                    card.style.display = "none";
+
+                }
+
+            });
+
+        }
+
+        searchInput.addEventListener(
+            "input",
+            filterAlerts
+        );
+
+        severityFilter.addEventListener(
+            "change",
+            filterAlerts
+        );
+
+        return filterAlerts;
+    }
+
+
+    async function refreshDashboard() {
+
+        try {
+
+            const searchInput =
+                document.getElementById("alertSearch");
+
+            const severityFilter =
+                document.getElementById("severityFilter");
+
+            // Remember current filters
+            const currentSearch =
+                searchInput ? searchInput.value : "";
+
+            const currentSeverity =
+                severityFilter
+                    ? severityFilter.value
+                    : "ALL";
+
+
+            const response =
+                await fetch("/", {
+                    cache: "no-store"
+                });
+
+            if (!response.ok) {
+                throw new Error(
+                    "Dashboard request failed: " +
+                    response.status
+                );
+            }
+
+
+            const html =
+                await response.text();
+
+
+            const parser =
+                new DOMParser();
+
+            const newDocument =
+                parser.parseFromString(
+                    html,
+                    "text/html"
+                );
+
+
+            const newMain =
+                newDocument.querySelector("main");
+
+            const currentMain =
+                document.querySelector("main");
+
+
+            if (!newMain || !currentMain) {
+                return;
+            }
+
+
+            // Replace dashboard content
+            currentMain.innerHTML =
+                newMain.innerHTML;
+
+
+            // Reconnect filters
+            const filterAlerts =
+                setupAlertFilters();
+
+
+            // Restore previous filter values
+            const newSearchInput =
+                document.getElementById("alertSearch");
+
+            const newSeverityFilter =
+                document.getElementById("severityFilter");
+
+
+            if (newSearchInput) {
+                newSearchInput.value =
+                    currentSearch;
+            }
+
+
+            if (newSeverityFilter) {
+                newSeverityFilter.value =
+                    currentSeverity;
+            }
+
+
+            // Apply filters again
+            if (filterAlerts) {
+                filterAlerts();
+            }
+
+
+            console.log(
+                "🛡️ CyberShield dashboard updated"
+            );
+            const lastUpdated =
+              document.getElementById("last-updated");
+
+            if (lastUpdated) {
+
+                 const now = new Date();
+
+                lastUpdated.textContent =
+                     "Last updated: " +
+                      now.toLocaleTimeString();
+
+            }
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "❌ Dashboard refresh failed:",
+                error
+            );
+
+        }
+
+    }
+
+
+    // Initial filter setup
+    setupAlertFilters();
+
+
+    // Refresh dashboard every 5 seconds
+    setInterval(
+        refreshDashboard,
+        5000
+    );
+
+</script>
+<script>
+
+function showIncident(card) {
+
+    console.log("CyberShield: opening incident");
+
+    const modal =
+        document.getElementById("incidentModal");
+
+    if (!modal) {
+
+        alert("Incident modal not found!");
+
+        return;
+    }
+
+    document.getElementById("incidentType").textContent =
+        card.dataset.type || "Unknown";
+
+    document.getElementById("incidentIP").textContent =
+        card.dataset.ip || "Unknown";
+
+    document.getElementById("incidentCount").textContent =
+        card.dataset.count || "0";
+
+    document.getElementById("incidentScore").textContent =
+        (card.dataset.score || "0") + "/100";
+
+    document.getElementById("incidentSeverity").textContent =
+        card.dataset.severity || "UNKNOWN";
+
+    document.getElementById("incidentSeverityText").textContent =
+        card.dataset.severity || "UNKNOWN";
+
+    document.getElementById("incidentMessage").textContent =
+        card.dataset.message || "No detection information available.";
+
+    modal.style.display = "flex";
+};
+
+
+function closeIncident() {
+
+    const modal =
+        document.getElementById("incidentModal");
+
+    if (modal) {
+
+        modal.style.display = "none";
+
+    }
+
+};
+
+</script>
+
+<script>
+window.addEventListener(
+    "click",
+    function(event) {
+
+        const modal =
+            document.getElementById("incidentModal");
+
+
+        if (event.target === modal) {
+
+            closeIncident();
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+
+</html>
