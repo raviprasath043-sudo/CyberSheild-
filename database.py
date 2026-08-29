@@ -1,11 +1,14 @@
 import sqlite3
+import os
 
-DATABASE = "data/security.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+DATABASE = os.path.join(DATA_DIR, "security.db")
 
 
 def get_connection():
+    os.makedirs(DATA_DIR, exist_ok=True)
     connection = sqlite3.connect(DATABASE)
-    connection.row_factory = sqlite3.Row
     return connection
 
 
