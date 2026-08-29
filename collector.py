@@ -5,7 +5,7 @@ import re
 import time
 
 
-API_URL = "https://cybersheild-pdul.onrender.com/api/events"
+API_URL = "https://cybersheild-pduf.onrender.com/api/events"
 
 CHECK_INTERVAL = 5
 STATE_FILE="collector_state.txt"
